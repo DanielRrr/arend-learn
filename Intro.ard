@@ -486,3 +486,57 @@
       | false => <=-helper (filter-lem p xs)
     }
 
+\func isEven (n : Nat) : Bool
+  | zero => true
+  | succ zero => false
+  | succ (succ n) => isEven n
+
+\func Even => \Sigma (n : Nat) (T (isEven n)) -- subtype of even numbers
+
+-- Embedding of even numbers into the type of all natural numbers
+\func Even-inc (e : Even) : Nat => e.1
+
+\func isInj {A B : \Type} (f : A -> B) => \Pi (x y : A) -> f x = f y -> x = y
+
+\func prodEq {A B : \Type} (t1 t2 : \Sigma A B) (p : t1.1 = t2.1) (q : t1.2 = t2.2) : t1 = t2
+  => path (\lam i => (p @ i, q @ i))
+
+\func J
+  {A : \Type} {a : A}
+  (B : \Pi (a' : A) -> a = a' -> \Type)
+  (b : B a idp)
+  {a' : A} (p : a = a')
+  : B a' p
+  -- the details of the definition are not important for now
+  => coe (\lam i => B (p @ i) (psqueeze p i)) b right
+  \where
+    \func psqueeze  {A : \Type} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\lam j => p @ I.squeeze i j)
+
+\func sigmaEq {A : \Type} (B : A -> \Type) (t1 t2 : \Sigma (x : A) (B x))
+  -- t1.2 : B t1.1
+  -- t2.2 : B t2.1
+              (p : t1.1 = t2.1) (q : transport B p t1.2 = t2.2)
+  : t1 = t2
+  \elim t1,t2,p,q
+  | (a1,b1), (a2,b2), idp, idp => idp
+
+\func T-lem {b : Bool} {x y : T b} : x = y \elim b, x, y
+  | true, unit, unit => idp
+
+-- TODO: this is wrong for some reason
+\func Even-inc-isInj : isInj Even-inc =>
+  \lam x y p => \case x,y,p \with {
+    | (x1, y1), (x2, y2), p => sigmaEq {Nat} (\lam n => T (isEven n)) (x1, y2) (x2, y2) p T-lem
+  }
+
+\func isProp (A : \Type) => \Pi (x y : A) -> x = y
+
+-- TODO: this is wrong for some reason
+\func unit-is-prop : isProp Unit => \lam x y => \case x, y \with {
+  | unit, unit => idp
+}
+
+\func Empty-isProp : isProp Empty => \lam x y => absurd x
+
+\func Impl-isProp {A B : \Type} {- (pA : isProp A) -} (pB : isProp B) : isProp (A -> B)
+  => \lam f g => funExt f g (\lam x => pB (f x) (g x))

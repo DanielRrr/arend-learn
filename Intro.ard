@@ -1,0 +1,428 @@
+\func qed {A : \Type} {a : A} : a = a => idp
+
+\func \infixr 1 >== {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') => p *> q
+
+\func \infix 2 ==< {A : \Type} (a : A) {a' : A} (p : a = a') => p
+
+\func f => 0
+
+\func g (x : Nat) => x
+
+\func h (_ : Nat) => 4
+
+\data Unit | unit
+
+\func k (_ : Nat) => unit
+
+\data Bool | false | true
+
+\func boolEq (a b : Bool) : Bool \with
+  | true, true => true
+  | false, false => false
+  | _,_          => false
+
+\func not (a : Bool) : Bool \elim a
+  | true => false
+  | false => true
+
+\func \infixl 7 & (a b : Bool) : Bool \with
+  | true, b => b
+  | false,_ => false
+
+\func ifNat (a : Bool) (b c : Nat) : Nat \elim a
+  | true => b
+  | false => c
+
+\data Nat | zero | succ Nat
+
+\func \infixl 6 + (x y : Nat) : Nat \elim y
+  | zero => x
+  | succ y' => succ (x + y')
+
+\func succ-+ (x y : Nat) : succ x + y = succ (x + y) \elim y
+  | zero => idp
+  | succ y => pmap succ (succ-+ x y)
+
+\func zero-+ (x : Nat) : x = zero + x \elim x
+  | zero => idp
+  | succ x => pmap succ (zero-+ x)
+
+\func +-assoc (x y z : Nat) : x + y + z = x + (y + z) \elim z
+  | zero => idp
+  | succ z' => pmap succ (+-assoc x y z')
+
+\func \infixl 7 * (x y : Nat) : Nat \elim y
+  | zero => zero
+  | succ y => x * y + x
+
+\func zero-* (x : Nat) : zero * x = zero \elim x
+  | zero => idp
+  | succ x => pmap (\lam x => x + zero) (zero-* x)
+
+\func one-*-left (x : Nat) : succ zero * x = x \elim x
+  | zero => idp
+  | succ x =>
+    succ zero * succ x ==< idp >==
+    succ zero * x + succ zero ==< pmap (\lam y => y + succ zero) (one-*-left x) >==
+    x + succ zero ==< idp >==
+    succ x ==< qed
+
+\func one-*-right (x : Nat) : x * succ zero = x \elim x
+  | zero => idp
+  | succ x =>
+    succ x * succ zero ==< idp >==
+    succ x * zero + succ x ==< idp >==
+    zero + succ x ==< sym (zero-+ (succ x)) >==
+    succ x ==< qed
+
+\func succ-* (x y : Nat) : x * y + y = succ x * y \elim y
+  | zero => idp
+  | succ y =>
+    succ (x * y + x + y) ==< pmap succ (+-assoc (x * y) x y) >==
+    succ (x * y + (x + y)) ==< pmap succ (pmap (\lam a => x * y + a) (+-comm x y)) >==
+    succ (x * y + (y + x)) ==< pmap succ (sym (+-assoc (x * y) y x)) >==
+    succ (x * y + y + x) ==< pmap succ (pmap (\lam a => a + x) (succ-* x y)) >==
+    succ (succ x * y + x) ==< idp
+
+\func \infixl 8 - (x y : Nat) : Nat \elim x, y
+  | zero, _ => zero
+  | succ x, zero => zero
+  | succ x, succ y => x - y
+
+\func if {A : \Set} (a : Bool) (b c : A) : A \elim a
+  | true => b
+  | false => c
+
+\func leZ (x : Nat) : Bool \elim x
+  | zero => false
+  | _    => true
+
+\func isZero (x : Nat) : Bool => not (leZ x)
+
+\func le (x y : Nat) : Bool => leZ (x - y)
+
+\func leq (x y : Nat) : Bool => le x y || isZero (x - y)
+
+\func \infixl 6 || (a b : Bool) : Bool =>
+  if (boolEq a b) false true
+
+\func \infixr 8 ^ (x y : Nat) : Nat \elim y
+  | zero => succ zero
+  | (succ y) => x * (x ^ y)
+
+\func fac (x : Nat) : Nat \elim x
+  | zero => succ zero
+  | succ x => succ x * fac x
+
+\data List (A : \Type) | nil | cons A (List A)
+
+\func foldr {A B : \Type} (f : A -> B -> B) (ini : B) (xs : List A) : B \elim xs
+  | nil => ini
+  | cons x xs => f x (foldr f ini xs)
+
+\func id {A : \Type} (x : A) => x
+
+\func emptynat => nil {Nat}
+
+\func \infixl 6 ++ {A : \Type} (xs ys : List A) : List A \elim xs
+  | nil => ys
+  | cons x xs => cons x (xs ++ ys)
+
+\data Pair (A B : \Type) | pair A B
+
+\func exPair => pair true 3
+
+\func NatList => List Nat
+
+\data Empty
+
+\func Unit-isTrue : Unit => unit
+
+\func sComb {P Q R : \Prop} : (P -> Q -> R) -> (P -> Q) -> P -> R =>
+  \lam f g x => f x (g x)
+
+\func \infixr 3 && (P Q : \Type) => \Sigma P Q
+
+\func &&-intro {P Q : \Type} (p : P) (q : Q) : P && Q => (p, q)
+
+\func &&-elim1 {P Q : \Type} (p : P && Q) : P => p.1
+
+\func &&-elim2 {P Q : \Type} (p : P && Q) : Q => p.2
+
+\func curry {P Q R : \Type} (f : P && Q -> R) (p : P) (q : Q) : R =>
+  f (p, q)
+
+\data Either (P Q : \Type)
+  | inl P
+  | inr Q
+
+\func either {P Q R : \Type} (f : P -> R) (g : Q -> R) (x : Either P Q) : R \elim x
+  | inl x => f x
+  | inr y => g y
+
+\func fact2 {P Q : \Type} (or : Either P Q) (and : P && Q) : (P -> Q) && (Q -> P) \elim or
+  | inl x => (\lam _ => and.2, \lam _ => x)
+  | inr y => (\lam _ => y, \lam _ => and.1)
+
+\func forallEx {P : Nat -> \Type} (f : \Pi (n : Nat) -> P n) : \Sigma (x : Nat) (P x) =>
+  (zero, f zero)
+
+\func Not (A : \Type) => A -> Empty
+
+\func doesntEx {P : Nat -> \Type} (p : Not (\Sigma (x : Nat) (P x))) : Not (P zero) =>
+  \lam ass => p (zero, ass)
+
+\func forallToEx
+  {P Q : Nat -> \Type}
+  (p : \Pi (n : Nat) -> P n -> Q n)
+  (q : \Sigma (n : Nat) (P n)) : \Sigma (n : Nat) (Q n) \elim q
+  | (x, px) => (x , p x px)
+
+\func T (b : Bool) : \Type \elim b
+  | true => Unit
+  | false => Empty
+
+\func not-isInvolution'' (x : Bool) : not (not x) = x
+  | true => idp
+  | false => idp
+
+\func &-assoc (x y z : Bool) : x & (y & z) = (x & y) & z \elim x
+  | true => idp
+  | false => idp
+
+\func obvious : succ (succ zero) + succ (succ zero) = succ (succ (succ (succ zero))) => idp
+
+\func reverse {A : \Type} (xs : List A) : List A => rev nil xs
+  \where
+    \func rev {A : \Type} (acc xs : List A) : List A \elim xs
+      | nil => acc
+      | cons x xs => rev (cons x acc) xs
+
+\func reverse-isInvolutive {A : \Type} (xs : List A) : reverse (reverse xs) = xs => rev-isInv nil xs
+  \where
+    \func rev-isInv {A : \Type} (acc xs : List A) : reverse (reverse.rev acc xs) = reverse.rev xs acc \elim xs
+      | nil => idp
+      | cons x xs => rev-isInv (cons x acc) xs
+
+\func pmap {A B : \Type} {x y : A} (f : A -> B) (p : x = y) : f x = f y \elim p
+  | idp => idp
+
+\func *-+-distr (x y z : Nat) : (x + y) * z = x * z + y * z \elim x
+  | zero =>
+    (zero + y) * z ==< pmap (\lam x => x * z) (sym (zero-+ y)) >==
+    y * z ==< zero-+ (y * z) >==
+    zero + y * z ==< pmap (\lam x => x + y * z) (sym (zero-* z)) >==
+    zero * z + y * z ==< idp
+  | succ x =>
+    (succ x + y) * z ==< pmap (\lam x => x * z) (succ-+ x y) >==
+    succ (x + y) * z ==< sym (succ-* (x + y) z) >==
+    (x + y) * z + z ==< pmap (\lam x => x + z) (*-+-distr x y z) >==
+    (x * z + y * z) + z ==< +-assoc (x * z) (y * z) z >==
+    x * z + (y * z + z) ==< pmap (\lam y => x * z + y) (+-comm (y * z) z) >==
+    x * z + (z + y * z) ==< sym (+-assoc (x * z) z (y * z)) >==
+    (x * z + z) + y * z ==< pmap (\lam a => a + y * z) (succ-* x z) >==
+    succ x * z + y * z ==< idp
+
+\func *-comm (x y : Nat) : x * y = y * x \elim y
+  | zero => sym (zero-* x)
+  | succ y =>
+    x * y + x ==< pmap (\lam a => a + x) (*-comm x y) >==
+    y * x + x ==< succ-* y x >==
+    succ y * x ==< idp
+
+\func +-*-distr (x y z : Nat) : x * y + x * z = x * (y + z) =>
+  x * y + x * z ==< pmap (\lam a => x * y + a) (*-comm x z) >==
+  x * y + z * x ==< pmap (\lam a => a + z * x) (*-comm x y) >==
+  y * x + z * x ==< sym (*-+-distr y z x) >==
+  (y + z) * x ==< *-comm (y + z) x >== x * (y + z) ==< idp
+
+\func *-assoc (x y z : Nat) : (x * y) * z = x * (y * z) \elim z
+  | zero => idp
+  | succ z =>
+    (x * y) * succ z ==< idp >==
+    (x * y) * z + x * y ==< pmap (\lam a => a + x * y) (*-assoc x y z) >==
+    x * (y * z) + x * y ==< +-*-distr x (y * z) y >==
+    x * (y * z + y) ==< pmap (\lam a => x * a) idp >==
+    x * (y * succ z) ==< idp
+
+\data Vec (A : \Type) (n : Nat) \elim n
+  | zero => fnil
+  | succ n => fcons A (Vec A n)
+
+\func Head {A : \Type} {n : Nat} (xs : Vec A (succ n)) : A \elim xs
+  | fcons x _ => x
+
+\func Tail {A : \Type} {n : Nat} (xs : Vec A (succ n)) : Vec A n \elim xs
+  | fcons _ xs => xs
+
+\data Maybe (A : \Type) | nothing | just A
+
+\func first {A : \Type} {n : Nat} (xs : Vec A n) : Maybe A \elim n, xs
+  | zero, fnil => nothing
+  | succ _, fcons x _ => just x
+
+\data Fin (n : Nat) \with
+  | succ n => { fzero | fsucc (Fin n) }
+
+\func lookUp {A : \Type} {n : Nat} (xs : Vec A n) (i : Fin n) : A \elim n, xs, i
+  | succ n, fcons a v, fzero => a
+  | succ n, fcons a v, fsucc f => lookUp v f
+
+\func transport {A : \Type} (B : A -> \Type) {a a' : A} (p : a = a') (b : B a) : B a'
+  => coe (\lam i => B (p @ i)) b right
+
+\func sym {A : \Type} {a a' : A} (p : a = a') : a' = a =>
+  transport (\lam x => x = a) p idp
+
+\func trans {A : \Type} {a b c : A} (p : a = b) (q : b = c) : a = c =>
+  transport (\lam x => a = x) q p
+
+\func pmap' {A B : \Type} {a a' : A} (f : A -> B) (p : a = a') : f a = f a' =>
+  transport (\lam x => f a = f x) p idp
+
+\func funExt {A : \Type} {B : A -> \Type} (f g : \Pi (a : A) -> B a)
+  (p : \Pi (a : A) -> f a = g a) : f = g =>
+  path (\lam i => \lam a => p a @ i)
+
+\func notEq : (\lam x => not (not x)) = (\lam x => x) =>
+  funExt (\lam x => not (not x)) (\lam x => x) not-isInvolution''
+
+\func Nat-rec (P : \Type)
+              (z : P)
+              (s : Nat -> P -> P)
+              (x : Nat) : P \elim x
+  | zero => z
+  | succ n => s n (Nat-rec P z s n)
+
+\func facRec (n : Nat) : Nat => Nat-rec Nat (succ zero) (*) n
+
+\func List-elim {A : \Type} (P : List A -> \Type)
+                (z : P nil)
+                (s : \Pi (xs : List A) -> \Pi (x : A) -> P xs -> P (cons x xs))
+                (x : List A) : P x \elim x
+  | nil => z
+  | cons x xs => s xs x (List-elim P z s xs)
+
+\func left=i (i : I) : left = i
+  => coe (\lam i => left = i) idp i
+
+\func left=right : left = right => left=i right
+
+\func transport' {A : \Type} (B : A -> \Type) {a a' : A} (p : a = a') (b : B a) : B a'
+  => coe (\lam i => B (p @ i)) b right
+
+\func leibniz {A : \Type} {a a' : A}
+  (f : \Pi (P : A -> \Type) -> \Sigma (P a -> P a') (P a' -> P a)) : a = a' =>
+  \let
+    | foo => f (\lam x => a = x)
+  \in foo.1 idp
+
+\func \infixr 5 *> {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a''
+  => transport (\lam x => a = x) q p
+
+\func +-comm (m n : Nat) : m + n = n + m
+  | zero, zero => idp
+  | zero, succ n => pmap succ (+-comm zero n)
+  | succ m, zero => pmap succ (+-comm m zero)
+  | succ m, succ n =>
+      pmap succ (+-comm (succ m) n *>
+      pmap succ (sym (+-comm m n)) *>
+      +-comm m (succ n))
+
+\func +-comm' (n m : Nat) : n + m = m + n
+  | zero, zero => idp
+  | succ n, zero => pmap succ (+-comm' n zero)
+  | zero, succ m => pmap succ (+-comm' zero m)
+  | succ n, succ m => pmap succ (
+    succ n + m   ==< +-comm' (succ n) m >==
+    succ (m + n) ==< pmap succ (sym (+-comm' n m)) >==
+    succ (n + m) ==< +-comm' n (succ m) >==
+    succ m + n  ==< idp
+  )
+
+\func +-zero (n : Nat) : zero + n = n
+  | zero => idp
+  | succ n => pmap succ (+-zero n)
+
+\func \infixl 4 v++ {A : \Type} {m n : Nat} (xs : Vec A m) (ys : Vec A n) : Vec A (m + n) \elim m, xs
+  | zero, vnil => transport (Vec A) (sym (+-zero n)) ys
+  | succ m, fcons x xs => transport (Vec A) (sym (succ-+ m n)) (fcons x (xs v++ ys))
+
+\data LessOrEq (n m : Nat) \with
+  | zero, m => z<=n
+  | succ n, succ m => s<=s (LessOrEq n m)
+
+\data Tr (b : Bool) \with
+  | true => tt
+
+\func isPos (n : Nat) : Bool
+  | zero => false
+  | succ _ => true
+
+\record PosNat (n : Nat) (p : T (isPos n))
+
+\class Monoid (A : \Type)
+  | identity : A
+  | \infixl 6 <*> : A -> A -> A
+  | *-associativity (x y z : A) : (x <*> y) <*> z = x <*> (y <*> z)
+  | id-left (x : A) : identity <*> x = x
+  | id-right (x : A) : x <*> identity = x
+
+\instance +-Monoid : Monoid Nat
+  | identity => zero
+  | <*> => +
+  | *-associativity => +-assoc
+  | id-left => \lam x => sym (zero-+ x)
+  | id-right => \lam x => idp
+
+\instance *-Monoid : Monoid Nat
+  | identity => succ zero
+  | <*> => *
+  | *-associativity => *-assoc
+  | id-left => one-*-left
+  | id-right => one-*-right
+
+\class Functor (F : \Type -> \Type)
+  | fmap {A B : \Type} (f : A -> B) : F A -> F B
+  | fmap-id {A : \Type} (y : F A) : fmap (\lam (x : A) => x) y = y
+  | fmap-comp {A B C : \Type} (f : A -> B) (g : B -> C) (y : F A)
+  : fmap (\lam x => g (f x)) y = fmap g (fmap f y)
+
+\func fmap-Maybe {A B : \Type} (f : A -> B) (x : Maybe A) : Maybe B \elim x
+  | nothing => nothing
+  | just x => just (f x)
+
+\func fmap-id-maybe {A : \Type} (y : Maybe A) : fmap-Maybe (\lam x => x) y = y \elim y
+  | nothing => idp
+  | just x => idp
+
+\func fmap-comp-maybe {A B C : \Type} (f : A -> B) (g : B -> C) (y : Maybe A) :
+  fmap-Maybe (\lam x => g (f x)) y = fmap-Maybe g (fmap-Maybe f y) \elim y
+  | nothing => idp
+  | just x => idp
+
+\instance Maybe-Functor : Functor Maybe
+  | fmap => fmap-Maybe
+  | fmap-id => fmap-id-maybe
+  | fmap-comp => fmap-comp-maybe
+
+\data State (S A : \Type)
+  | state (S -> \Sigma S A)
+
+\func Sigma-map {S A B : \Type} (f : A -> B) (p : \Sigma S A) : \Sigma S B \elim p
+  | (x, y) => (x, f y)
+
+\func fmap-state {S A B : \Type} (f : A -> B) (s : State S A) : State S B \elim s
+  | state g => state (\lam s' => Sigma-map f (g s'))
+
+\func fmap-id-state {S A : \Type} (y : State S A) : fmap-state (\lam x => x) y = y \elim y
+  | state g => idp
+
+\func fmap-comp-state {S A B C : \Type} (f : A -> B) (g : B -> C) (y : State S A) :
+  fmap-state (\lam x => g (f x)) y = fmap-state g (fmap-state f y) \elim y
+  | state g => idp
+
+\instance State-Functor {S : \Type} : Functor (State S)
+  | fmap => fmap-state
+  | fmap-id => fmap-id-state
+  | fmap-comp => fmap-comp-state

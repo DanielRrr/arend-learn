@@ -99,9 +99,9 @@
 
 \func isZero (x : Nat) : Bool => not (leZ x)
 
-\func le (x y : Nat) : Bool => leZ (x - y)
+\func \infix 4 < (x y : Nat) : Bool => leZ (x - y)
 
-\func leq (x y : Nat) : Bool => le x y || isZero (x - y)
+\func leq (x y : Nat) : Bool => (x < y) || isZero (x - y)
 
 \func \infixl 6 || (a b : Bool) : Bool =>
   if (boolEq a b) false true
@@ -426,3 +426,63 @@
   | fmap => fmap-state
   | fmap-id => fmap-id-state
   | fmap-comp => fmap-comp-state
+
+\func filter {A : \Type} (p : A -> Bool) (xs : List A) : List A \elim xs
+  | nil => nil
+  | cons x xs => \case p x \with {
+    | true => cons x (filter p xs)
+    | false => filter p xs
+  }
+
+\func pred (n : Nat) : Nat =>
+  \case n \with {
+    | zero => zero
+    | succ n => n
+  }
+
+\func another-fact {A : \Type} (p : A -> Bool) (a : A) : p a = not (not (p a)) =>
+  \case p a \as b \return b = not (not b) \with {
+    | true => idp
+    -- here we should return expression of type true = not (not true)
+    | false => idp
+    -- and here of type false = not (not false)
+  }
+
+\data Ordering | LT | EQ | GT
+
+\func compare (x y : Nat) : Ordering =>
+  \case x < y, y < x \with {
+    | true, true => EQ -- this will never be matched
+    | true, false => LT
+    | false, true => GT
+    | false, false => EQ
+  }
+
+\func absurd {A : \Type} (e : Empty) : A
+
+\func \infix 4 <= (x y : Nat) : \Type
+  | zero, _ => Unit
+  | succ _, zero => Empty
+  | succ x, succ y => x <= y
+
+\func length {A : \Type} (xs : List A) : Nat
+  | nil => zero
+  | cons _ xs => succ (length xs)
+
+\func <=-helper {x y : Nat} (p : x <= y) : x <= succ y \elim x, y
+  | zero, _ => unit
+  | succ x, zero => absurd p
+  | succ x, succ y => <=-helper p
+
+\func filter-lem {A : \Type} (p : A -> Bool) (xs : List A) : length (filter p xs) <= length xs \elim xs
+  | nil => unit
+  | cons x xs =>
+    \case p x \as b \return length
+      (\case b \with {
+        | true => cons x (filter p xs)
+        | false => filter p xs
+      }) <= succ (length xs) \with {
+      | true => filter-lem p xs
+      | false => <=-helper (filter-lem p xs)
+    }
+
